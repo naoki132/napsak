@@ -28,11 +28,8 @@ p_sum2 = [0] * x
 p_sum_index = [0] * x
 rank = [0] * x
 
-top2 = [0] * 2
-n_top2 = [0] * 2
-
-elite = [[0] * item for _ in range(2)]
-nexte = [[0] * item for _ in range(x-2)]
+nexte = [[0] * item for _ in range(x)]
+elite = [[0] * item for _ in range(x//3)]
 
 #評価関数
 def evaluation():
@@ -50,31 +47,6 @@ def evaluation():
 
 #選択関数
 def choice():
-    #エリート選択
-    if(p_sum[0] > p_sum[1]):
-        top2[0] = p_sum[0]
-        top2[1] = p_sum[1]
-        n_top2[0] = 0
-        n_top2[1] = 1
-    else:
-        top2[0] = p_sum[1]
-        top2[1] = p_sum[0]
-        n_top2[0] = 1
-        n_top2[1] = 0
-
-    for i in range(2,x):
-        if(p_sum[i] > top2[0]):
-            top2[1] = top2[0]
-            top2[0] = p_sum[i]
-            n_top2[0] = i
-            n_top2[1] = 0
-        elif(p_sum[i] > top2[1]):
-            top2[1] = p_sum[i]
-            n_top2[1] = i
-    #上位２つをeliteに代入
-    for i in range(2):
-        for j in range(item):
-            elite[i][j] = e[n_top2[i]][j]
     #ランキング選択
     p_sum2 = p_sum.copy()
     for i in range(x):
@@ -87,24 +59,28 @@ def choice():
         rank[max_index] = x - i
         p_sum2[max_index] = -1
 
-    total = 0
-    for i in range(x):
-        total += rank[i]
+    a = 0
 
-    for i in range(x-2):
-        arrow = r.randint(0,total)
-        gokei = 0
-        for j in range(x):
-            gokei += rank[j]
-            if(gokei >= arrow):
-                for k in range(item):
-                    nexte[i][k] = e[j][k]
-                break
+    for i in range(x):
+        if(rank[i] > x - x // 3):
+            for j in range(item):
+                elite[a][j] = e[i][j]
+            a = a + 1
+    
+    for i in range(x):
+        if(rank[i] <= x // 3):
+            for j in range(item):
+                e[i][j] = elite[a-1][j]
+            a = a - 1
+    
+    for i in range(x):
+        for j in range(item):
+            nexte[i][j] = e[i][j]
 
 #2点交叉
 def generation():
-    for i in range(0,x-2,2):
-        if(x%2 == 1 and i >= x-3):
+    for i in range(0,x,2):
+        if(x%2 == 1 and i >= x-1):
             break
         crossrate = r.randint(0,99)
         if(crossrate < 95):
@@ -125,19 +101,11 @@ def generation():
 
 def mutation():
     #突然変異
-    for i in range(x-2):
+    for i in range(x):
         mutantrate = r.randint(0,99)
         if(mutantrate < 5):
             m = r.randint(0,item-1)
             nexte[i][m] = (nexte[i][m] + 1) % 2
-#エリート代入
-def inherit():
-    for i in range(x):
-        for j in range(item):
-            if(i == 0 or i == 1):
-                e[i][j] = elite[i][j]
-            else:
-                e[i][j] = nexte[i-2][j]
 
 if __name__ == "__main__":
     for i in range(500):
@@ -146,7 +114,6 @@ if __name__ == "__main__":
         choice()
         generation()
         mutation()
-        inherit()
     evaluation()
     print(max(p_sum))
     print(e[p_sum.index(max(p_sum))])
